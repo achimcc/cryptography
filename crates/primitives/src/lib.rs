@@ -21,7 +21,8 @@ impl<const BASE: u32> Field for PrimeField<BASE> {
     }
 
     fn sub(&self, to_sub: Self) -> Self {
-        ((((self.value as i32 - to_sub.value as i32) % BASE as i32) + BASE as i32) as u32 % BASE).into()
+        ((((self.value as i32 - to_sub.value as i32) % BASE as i32) + BASE as i32) as u32 % BASE)
+            .into()
     }
 
     fn mul(&self, to_mul: Self) -> Self {
@@ -32,7 +33,15 @@ impl<const BASE: u32> Field for PrimeField<BASE> {
     where
         Self: Sized,
     {
-        todo!()
+        if self.value == 0 {
+            return None;
+        }
+        for x in 1..BASE {
+            if (x * self.value) % BASE == 1 {
+                return Some(x.into());
+            }
+        }
+        None
     }
 
     fn div(&self, to_div: Self) -> Option<Self>
@@ -77,5 +86,12 @@ mod tests {
         const P: u32 = 7;
         let [a, b] = [3, 6].map(PrimeField::<P>::from);
         assert_eq!(a.mul(b), PrimeField::<P>::from(4));
+    }
+
+    #[test]
+    fn division_works() {
+        const P: u32 = 11;
+        let [a, b] = [8, 2].map(PrimeField::<P>::from);
+        assert_eq!(a.div(b).unwrap(), PrimeField::<P>::from(4));
     }
 }
