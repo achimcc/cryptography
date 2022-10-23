@@ -3,6 +3,8 @@ pub trait Field {
     fn sub(&self, to_sub: Self) -> Self;
     fn mul(&self, to_mul: Self) -> Self;
     fn is_null(&self) -> bool;
+    fn one() -> Self;
+    fn zero() -> Self;
     fn inv(&self) -> Option<Self>
     where
         Self: Sized;
@@ -54,6 +56,14 @@ impl<const BASE: u32> Field for PrimeField<BASE> {
         Self: Sized,
     {
         to_div.inv().map(|inv| self.mul(inv))
+    }
+
+    fn one() -> Self {
+        PrimeField { value: 1 }
+    }
+
+    fn zero() -> Self {
+        PrimeField { value: 0 }
     }
 }
 

@@ -37,14 +37,29 @@ impl<const BASE: u32> Curve<PrimeField<BASE>> for EllipticCurve<PrimeField<BASE>
 }
 
 impl<CurveField: Field> From<Affine<CurveField>> for EllipticCurve<CurveField> {
-    fn from(_: Affine<CurveField>) -> Self {
-        todo!()
+    fn from(point: Affine<CurveField>) -> Self {
+        EllipticCurve { point }
     }
 }
 
 impl<CurveField: Field> From<Projective<CurveField>> for EllipticCurve<CurveField> {
-    fn from(_: Projective<CurveField>) -> Self {
-        todo!()
+    fn from(from_point: Projective<CurveField>) -> Self {
+        if from_point.is_infity {
+            return EllipticCurve::<CurveField> {
+                point: Affine::<CurveField> {
+                    x: CurveField::zero(),
+                    y: CurveField::one(),
+                    z: CurveField::zero(),
+                },
+            };
+        };
+        EllipticCurve::<CurveField> {
+            point: Affine::<CurveField> {
+                x: from_point.x,
+                y: from_point.y,
+                z: CurveField::one(),
+            },
+        }
     }
 }
 
