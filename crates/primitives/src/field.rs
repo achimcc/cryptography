@@ -2,6 +2,7 @@ pub trait Field {
     fn add(&self, to_add: Self) -> Self;
     fn sub(&self, to_sub: Self) -> Self;
     fn mul(&self, to_mul: Self) -> Self;
+    fn is_null(&self) -> bool;
     fn inv(&self) -> Option<Self>
     where
         Self: Sized;
@@ -29,11 +30,15 @@ impl<const BASE: u32> Field for PrimeField<BASE> {
         ((self.value * to_mul.value) % BASE).into()
     }
 
+    fn is_null(&self) -> bool {
+        self.value == 0
+    }
+
     fn inv(&self) -> Option<Self>
     where
         Self: Sized,
     {
-        if self.value == 0 {
+        if self.is_null() {
             return None;
         }
         for x in 1..BASE {
@@ -48,10 +53,7 @@ impl<const BASE: u32> Field for PrimeField<BASE> {
     where
         Self: Sized,
     {
-        if let Some(inv) = to_div.inv() {
-            return Some(self.mul(inv).into());
-        }
-        None
+        to_div.inv().map(|inv| self.mul(inv))
     }
 }
 

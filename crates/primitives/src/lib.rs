@@ -1,2 +1,2 @@
-mod field;
 mod curve;
+mod field;
