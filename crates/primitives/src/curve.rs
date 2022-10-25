@@ -18,11 +18,11 @@ pub struct Projective<CurveField: Field> {
     is_infity: bool,
 }
 
-pub struct EllipticCurve<CurveField: Field> {
+pub struct CurvePoint<CurveField: Field> {
     point: Affine<CurveField>,
 }
 
-impl<const BASE: u32> Curve<PrimeField<BASE>> for EllipticCurve<PrimeField<BASE>> {
+impl<const BASE: u32> Curve<PrimeField<BASE>> for CurvePoint<PrimeField<BASE>> {
     fn add(&self, to_add: Self) -> Self {
         todo!()
     }
@@ -36,16 +36,16 @@ impl<const BASE: u32> Curve<PrimeField<BASE>> for EllipticCurve<PrimeField<BASE>
     }
 }
 
-impl<CurveField: Field> From<Affine<CurveField>> for EllipticCurve<CurveField> {
+impl<CurveField: Field> From<Affine<CurveField>> for CurvePoint<CurveField> {
     fn from(point: Affine<CurveField>) -> Self {
-        EllipticCurve { point }
+        CurvePoint { point }
     }
 }
 
-impl<CurveField: Field> From<Projective<CurveField>> for EllipticCurve<CurveField> {
+impl<CurveField: Field> From<Projective<CurveField>> for CurvePoint<CurveField> {
     fn from(from_point: Projective<CurveField>) -> Self {
         if from_point.is_infity {
-            return EllipticCurve::<CurveField> {
+            return CurvePoint::<CurveField> {
                 point: Affine::<CurveField> {
                     x: CurveField::zero(),
                     y: CurveField::one(),
@@ -53,7 +53,7 @@ impl<CurveField: Field> From<Projective<CurveField>> for EllipticCurve<CurveFiel
                 },
             };
         };
-        EllipticCurve::<CurveField> {
+        CurvePoint::<CurveField> {
             point: Affine::<CurveField> {
                 x: from_point.x,
                 y: from_point.y,
@@ -63,14 +63,29 @@ impl<CurveField: Field> From<Projective<CurveField>> for EllipticCurve<CurveFiel
     }
 }
 
-impl<CurveField: Field> From<EllipticCurve<CurveField>> for Affine<CurveField> {
-    fn from(_: EllipticCurve<CurveField>) -> Self {
-        todo!()
+impl<CurveField: Field> From<CurvePoint<CurveField>> for Affine<CurveField> {
+    fn from(CurvePoint { point }: CurvePoint<CurveField>) -> Self {
+        point
     }
 }
 
-impl<CurveField: Field> From<EllipticCurve<CurveField>> for Projective<CurveField> {
-    fn from(_: EllipticCurve<CurveField>) -> Self {
-        todo!()
+impl<CurveField: Field + PartialEq + Copy> From<CurvePoint<CurveField>> for Projective<CurveField> {
+    fn from(CurvePoint { point }: CurvePoint<CurveField>) -> Self {
+        match point.z.is_null() {
+            true => {
+                return Projective {
+                    x: point.x,
+                    y: point.y,
+                    is_infity: true,
+                }
+            }
+            false => {
+                return Projective {
+                    x: point.x.div(point.z).unwrap(),
+                    y: point.y.div(point.z).unwrap(),
+                    is_infity: false,
+                };
+            }
+        }
     }
 }
