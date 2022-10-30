@@ -1,14 +1,17 @@
+use std::ops::{Add, Mul, Sub};
+
 pub trait Field {
-    fn add(&self, to_add: Self) -> Self;
-    fn sub(&self, to_sub: Self) -> Self;
-    fn mul(&self, to_mul: Self) -> Self;
+    fn field_add(&self, to_add: &Self) -> Self;
+    fn field_sub(&self, to_sub: &Self) -> Self;
+    fn field_mul(&self, to_mul: &Self) -> Self;
+    fn pow(&self, to_exp: u32) -> Self;
     fn is_null(&self) -> bool;
     fn one() -> Self;
     fn zero() -> Self;
     fn inv(&self) -> Option<Self>
     where
         Self: Sized;
-    fn div(&self, to_div: Self) -> Option<Self>
+    fn div(&self, to_div: &Self) -> Option<Self>
     where
         Self: Sized;
 }
@@ -19,16 +22,16 @@ pub struct PrimeField<const BASE: u32> {
 }
 
 impl<const BASE: u32> Field for PrimeField<BASE> {
-    fn add(&self, to_add: Self) -> Self {
+    fn field_add(&self, to_add: &Self) -> Self {
         ((self.value + to_add.value) % BASE).into()
     }
 
-    fn sub(&self, to_sub: Self) -> Self {
+    fn field_sub(&self, to_sub: &Self) -> Self {
         ((((self.value as i32 - to_sub.value as i32) % BASE as i32) + BASE as i32) as u32 % BASE)
             .into()
     }
 
-    fn mul(&self, to_mul: Self) -> Self {
+    fn field_mul(&self, to_mul: &Self) -> Self {
         ((self.value * to_mul.value) % BASE).into()
     }
 
@@ -51,11 +54,11 @@ impl<const BASE: u32> Field for PrimeField<BASE> {
         None
     }
 
-    fn div(&self, to_div: Self) -> Option<Self>
+    fn div(&self, to_div: &Self) -> Option<Self>
     where
         Self: Sized,
     {
-        to_div.inv().map(|inv| self.mul(inv))
+        to_div.inv().map(|inv| self.mul(&inv))
     }
 
     fn one() -> Self {
@@ -64,6 +67,58 @@ impl<const BASE: u32> Field for PrimeField<BASE> {
 
     fn zero() -> Self {
         PrimeField { value: 0 }
+    }
+
+    fn pow(&self, to_exp: u32) -> Self {
+        todo!()
+    }
+}
+
+impl<'a, 'b, const BASE: u32> Add<&'b PrimeField<BASE>> for &'a PrimeField<BASE> {
+    type Output = PrimeField<BASE>;
+
+    fn add(self, other: &'b PrimeField<BASE>) -> PrimeField<BASE> {
+        self.field_add(other)
+    }
+}
+
+impl<const BASE: u32> Add<PrimeField<BASE>> for PrimeField<BASE> {
+    type Output = PrimeField<BASE>;
+
+    fn add(self, other: PrimeField<BASE>) -> PrimeField<BASE> {
+        self.field_add(&other)
+    }
+}
+
+impl<'a, 'b, const BASE: u32> Sub<&'b PrimeField<BASE>> for &'a PrimeField<BASE> {
+    type Output = PrimeField<BASE>;
+
+    fn sub(self, other: &'b PrimeField<BASE>) -> PrimeField<BASE> {
+        self.field_sub(other)
+    }
+}
+
+impl<const BASE: u32> Sub<PrimeField<BASE>> for PrimeField<BASE> {
+    type Output = PrimeField<BASE>;
+
+    fn sub(self, other: PrimeField<BASE>) -> PrimeField<BASE> {
+        self.field_sub(&other)
+    }
+}
+
+impl<const BASE: u32> Mul<PrimeField<BASE>> for PrimeField<BASE> {
+    type Output = PrimeField<BASE>;
+
+    fn mul(self, other: PrimeField<BASE>) -> PrimeField<BASE> {
+        self.field_mul(&other)
+    }
+}
+
+impl<'a, 'b, const BASE: u32> Mul<&'b PrimeField<BASE>> for &'a PrimeField<BASE> {
+    type Output = PrimeField<BASE>;
+
+    fn mul(self, other: &'b PrimeField<BASE>) -> PrimeField<BASE> {
+        self.field_mul(other)
     }
 }
 
@@ -104,6 +159,6 @@ mod tests {
     fn division_works() {
         const P: u32 = 11;
         let [a, b] = [8, 2].map(PrimeField::<P>::from);
-        assert_eq!(a.div(b).unwrap(), PrimeField::<P>::from(4));
+        assert_eq!(a.div(&b).unwrap(), PrimeField::<P>::from(4));
     }
 }
