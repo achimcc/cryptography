@@ -16,7 +16,7 @@ pub trait Field {
         Self: Sized;
 }
 
-#[derive(PartialEq, Eq, Debug)]
+#[derive(PartialEq, Eq, Debug, Clone, Copy)]
 pub struct PrimeField<const BASE: u32> {
     value: u32,
 }
@@ -70,7 +70,11 @@ impl<const BASE: u32> Field for PrimeField<BASE> {
     }
 
     fn pow(&self, to_exp: u32) -> Self {
-        todo!()
+        let mut result = Self::one();
+        for _ in 0..to_exp {
+            result = &result * self;
+        }
+        result
     }
 }
 
