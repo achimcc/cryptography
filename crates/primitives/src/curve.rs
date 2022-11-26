@@ -1,22 +1,22 @@
 use crate::field::*;
 
 pub trait Curve<CurveField: Field> {
-    fn add(&self, to_add: Self) -> Self;
+    fn add(self, to_add: Self) -> Self;
     fn scalar_mul(&self, scalar: CurveField) -> Self;
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct Projective<CurveField: Field> {
     x: CurveField,
     y: CurveField,
     z: CurveField,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct Affine<CurveField: Field> {
     x: CurveField,
     y: CurveField,
-    is_infity: bool,
+    is_infinity: bool,
 }
 
 #[derive(Debug)]
@@ -25,19 +25,51 @@ pub struct CurvePoint<CurveField: Field> {
 }
 
 impl<const BASE: u32> Curve<PrimeField<BASE>> for CurvePoint<PrimeField<BASE>> {
-    fn add(&self, to_add: Self) -> Self {
-        let (x_p, y_p, z_p) = (&self.point.x, &self.point.y, &self.point.z);
-        let (x_q, y_q, z_q) = (&to_add.point.x, &to_add.point.y, &to_add.point.z);
-        let x = ((x_p * z_q) - (x_q * z_p))
-            * ((z_p * z_q) * ((y_p * z_q) - (y_q * z_p)).pow(2)
-                - (x_p * z_q - x_q * z_p).pow(2) * (x_p * z_q + x_q * z_p));
-        let y = z_p * z_q * (x_q * y_p - x_p * y_q) * (x_p * z_q - x_q * z_p).pow(2)
-            - (y_p * z_q - y_q * z_p)
-                * ((y_p * z_q - y_q * z_p).pow(2) * (z_p * z_q)
-                    - (x_p * z_q + x_q * z_p) * (x_p * z_q - x_q * z_p).pow(2));
-        let z = z_p * z_q * (x_p * z_q - x_q * z_p).pow(3);
-        Self {
-            point: Projective { x, y, z },
+    fn add(self, to_add: Self) -> Self {
+        let infinity = Projective {
+            x: PrimeField::from(0),
+            y: PrimeField::from(1),
+            z: PrimeField::from(0),
+        };
+        if self.point == infinity {
+            to_add
+        }
+        else if to_add.point == infinity {
+            self
+        }
+        else {
+            let (x_1, y_1, z_1) = (&self.point.x, &self.point.y, &self.point.z);
+            let (x_2, y_2, z_2) = (&to_add.point.x, &to_add.point.y, &to_add.point.z);
+            let (u_1, u_2) = (y_2 * z_1, y_1 * z_2);
+            let (v_1, v_2) = (x_2 * z_1, x_1 * z_2);
+            if v_1 == v_2 {
+                if u_1 != u_2 {
+                    Self {
+                        point: infinity,
+                    }
+                }
+                else {
+                    if y_1.is_null() {
+                        Self {
+                            point: infinity,
+                        }  
+                    }
+                    else {
+                        unimplemented!()
+                    }
+                }  
+            } else {
+                let u = u_1 - u_2;
+                let v = v_1 - v_2;
+                let w = z_1 * z_2;
+                let a = u.pow(2) * w - v.pow(3) - PrimeField::from(2) * v.pow(2) * v_2;
+                let x = v * a;
+                let y = u * (v.pow(2) * v_2 - a) - v.pow(3) * u_2;
+                let z = v.pow(3) * w;
+                Self {
+                    point: Projective { x, y, z },
+                }
+            }
         }
     }
 
@@ -54,7 +86,7 @@ impl<CurveField: Field> From<Projective<CurveField>> for CurvePoint<CurveField> 
 
 impl<CurveField: Field> From<Affine<CurveField>> for CurvePoint<CurveField> {
     fn from(from_point: Affine<CurveField>) -> Self {
-        if from_point.is_infity {
+        if from_point.is_infinity {
             return CurvePoint::<CurveField> {
                 point: Projective::<CurveField> {
                     x: CurveField::zero(),
@@ -85,12 +117,12 @@ impl<CurveField: Field + PartialEq + Copy> From<CurvePoint<CurveField>> for Affi
             true => Affine {
                 x: point.x,
                 y: point.y,
-                is_infity: true,
+                is_infinity: true,
             },
             false => Affine {
                 x: point.x.div(&point.z).unwrap(),
                 y: point.y.div(&point.z).unwrap(),
-                is_infity: false,
+                is_infinity: false,
             },
         }
     }
@@ -106,13 +138,13 @@ mod tests {
         let p_point = Affine::<PrimeField<N>> {
             x: 2.into(),
             y: 5.into(),
-            is_infity: false,
+            is_infinity: false,
         };
         let p = CurvePoint::<PrimeField<N>>::from(p_point);
         let q_point = Affine::<PrimeField<N>> {
             x: 12.into(),
             y: 1.into(),
-            is_infity: false,
+            is_infinity: false,
         };
         let q = CurvePoint::<PrimeField<N>>::from(q_point);
         let r: Affine<PrimeField<N>> = p.add(q).into();
