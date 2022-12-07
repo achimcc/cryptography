@@ -1,4 +1,4 @@
-use std::ops::{Add, Mul, Sub};
+use std::ops::{Add, Mul, Sub, Rem, DivAssign};
 
 pub trait Field {
     fn field_add(&self, to_add: &Self) -> Self;
@@ -118,6 +118,20 @@ impl<const BASE: u32> Mul<PrimeField<BASE>> for PrimeField<BASE> {
     }
 }
 
+impl<const BASE: u32> Rem<u32> for PrimeField<BASE> {
+    type Output = u32;
+
+    fn rem(self, modulus: u32) -> u32 {
+        self.value % modulus
+    }
+}
+
+impl<const BASE: u32> DivAssign<u32> for PrimeField<BASE> {
+    fn div_assign(&mut self, rhs: u32) {
+        self.value /= rhs;
+    }
+}
+
 impl<'a, 'b, const BASE: u32> Mul<&'b PrimeField<BASE>> for &'a PrimeField<BASE> {
     type Output = PrimeField<BASE>;
 
@@ -131,6 +145,22 @@ impl<const BASE: u32> From<u32> for PrimeField<BASE> {
         Self {
             value: (value % BASE),
         }
+    }
+}
+
+#[derive(Debug, PartialEq, Eq)]
+pub struct Binary(Vec<bool>);
+
+impl<const BASE: u32> From<PrimeField<BASE>> for Binary {
+    fn from(value: PrimeField<BASE>) -> Binary  {
+        let mut result: Vec<bool> = Vec::new();
+        let mut remainder = value.clone();
+        while !remainder.is_null() {
+           if (remainder%2) == 0 {result.push(false)}
+           else { result.push(true) } 
+           remainder /= 2; 
+        }
+        Binary(result)
     }
 }
 
@@ -164,5 +194,14 @@ mod tests {
         const P: u32 = 11;
         let [a, b] = [8, 2].map(PrimeField::<P>::from);
         assert_eq!(a.div(&b).unwrap(), PrimeField::<P>::from(4));
+    }
+
+    #[test]
+    fn binary_works() { 
+        const P: u32 = 7;
+        let a = PrimeField::<P>::from(6);
+        let result:Binary = a.into();
+        let binary = Binary(vec![false, true, true]);
+        assert_eq!(result, binary);
     }
 }
