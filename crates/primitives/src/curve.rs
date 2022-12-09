@@ -1,6 +1,7 @@
 use crate::field::*;
+use std::ops::Add;
 
-pub trait Curve<CurveField: Field> {
+pub trait Curve<CurveField: Field>: Add + Sized {
     fn add(self, to_add: Self) -> Self;
     fn scalar_mul(&self, scalar: CurveField) -> Self;
 }
@@ -66,6 +67,13 @@ impl<const BASE: u32> Curve<PrimeField<BASE>> for CurvePoint<PrimeField<BASE>> {
     }
 
     fn scalar_mul(&self, scalar: PrimeField<BASE>) -> Self {
+        todo!()
+    }
+}
+
+impl<const BASE: u32> Add<CurvePoint<PrimeField<BASE>>> for CurvePoint<PrimeField<BASE>> {
+    type Output = CurvePoint<PrimeField<BASE>>;
+    fn add(self, _other: CurvePoint<PrimeField<BASE>>) -> Self::Output {
         todo!()
     }
 }
