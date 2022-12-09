@@ -2,10 +2,10 @@ use crate::field::*;
 use std::ops::Add;
 
 pub trait Curve<CurveField: Field>: Add + Sized {
-    fn scalar_mul(&self, scalar: CurveField) -> Self;
+    fn scalar_mul(self, scalar: CurveField) -> Self;
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone, Copy)]
 pub struct Projective<CurveField: Field> {
     x: CurveField,
     y: CurveField,
@@ -19,15 +19,29 @@ pub struct Affine<CurveField: Field> {
     is_infinity: bool,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub struct CurvePoint<CurveField: Field> {
     point: Projective<CurveField>,
 }
 
 impl<const BASE: u32> Curve<PrimeField<BASE>> for CurvePoint<PrimeField<BASE>> {
-   
-    fn scalar_mul(&self, scalar: PrimeField<BASE>) -> Self {
-        todo!()
+    fn scalar_mul(self, scalar: PrimeField<BASE>) -> Self {
+        let binary: Binary = scalar.into();
+        let mut double = self.clone();
+        let mut result = Self {
+            point: Projective {
+                x: PrimeField::from(0),
+                y: PrimeField::from(1),
+                z: PrimeField::from(0),
+            },
+        };
+        for step in binary.into_iter() {
+            if step {
+                result = result + double
+            }
+            double = double + double;
+        }
+        result
     }
 }
 
