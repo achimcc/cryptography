@@ -1,7 +1,7 @@
 use crate::field::*;
+use std::ops::Add;
 
-pub trait Curve<CurveField: Field> {
-    fn add(self, to_add: Self) -> Self;
+pub trait Curve<CurveField: Field>: Add + Sized {
     fn scalar_mul(&self, scalar: CurveField) -> Self;
 }
 
@@ -25,7 +25,15 @@ pub struct CurvePoint<CurveField: Field> {
 }
 
 impl<const BASE: u32> Curve<PrimeField<BASE>> for CurvePoint<PrimeField<BASE>> {
-    fn add(self, to_add: Self) -> Self {
+   
+    fn scalar_mul(&self, scalar: PrimeField<BASE>) -> Self {
+        todo!()
+    }
+}
+
+impl<const BASE: u32> Add<CurvePoint<PrimeField<BASE>>> for CurvePoint<PrimeField<BASE>> {
+    type Output = CurvePoint<PrimeField<BASE>>;
+    fn add(self, to_add: Self) -> Self::Output {
         let infinity = Projective {
             x: PrimeField::from(0),
             y: PrimeField::from(1),
@@ -63,10 +71,6 @@ impl<const BASE: u32> Curve<PrimeField<BASE>> for CurvePoint<PrimeField<BASE>> {
                 }
             }
         }
-    }
-
-    fn scalar_mul(&self, scalar: PrimeField<BASE>) -> Self {
-        todo!()
     }
 }
 
@@ -139,7 +143,7 @@ mod tests {
             is_infinity: false,
         };
         let q = CurvePoint::<PrimeField<N>>::from(q_point);
-        let r: Affine<PrimeField<N>> = p.add(q).into();
+        let r: Affine<PrimeField<N>> = (p + q).into();
         // println!("p: {:#?}", p);
         // println!("q: {:#?}", q);
         println!("r: {:#?}", r);
