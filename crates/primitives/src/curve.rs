@@ -2,7 +2,6 @@ use crate::field::*;
 use std::ops::Add;
 
 pub trait Curve<CurveField: Field>: Add + Sized {
-    fn add(self, to_add: Self) -> Self;
     fn scalar_mul(&self, scalar: CurveField) -> Self;
 }
 
@@ -26,46 +25,7 @@ pub struct CurvePoint<CurveField: Field> {
 }
 
 impl<const BASE: u32> Curve<PrimeField<BASE>> for CurvePoint<PrimeField<BASE>> {
-    fn add(self, to_add: Self) -> Self {
-        let infinity = Projective {
-            x: PrimeField::from(0),
-            y: PrimeField::from(1),
-            z: PrimeField::from(0),
-        };
-        if self.point == infinity {
-            to_add
-        } else if to_add.point == infinity {
-            self
-        } else {
-            let (x_1, y_1, z_1) = (&self.point.x, &self.point.y, &self.point.z);
-            let (x_2, y_2, z_2) = (&to_add.point.x, &to_add.point.y, &to_add.point.z);
-            let (u_1, u_2) = (y_2 * z_1, y_1 * z_2);
-            let (v_1, v_2) = (x_2 * z_1, x_1 * z_2);
-            if v_1 == v_2 {
-                if u_1 != u_2 {
-                    Self { point: infinity }
-                } else {
-                    if y_1.is_null() {
-                        Self { point: infinity }
-                    } else {
-                        unimplemented!()
-                    }
-                }
-            } else {
-                let u = u_1 - u_2;
-                let v = v_1 - v_2;
-                let w = z_1 * z_2;
-                let a = u.pow(2) * w - v.pow(3) - PrimeField::from(2) * v.pow(2) * v_2;
-                let x = v * a;
-                let y = u * (v.pow(2) * v_2 - a) - v.pow(3) * u_2;
-                let z = v.pow(3) * w;
-                Self {
-                    point: Projective { x, y, z },
-                }
-            }
-        }
-    }
-
+   
     fn scalar_mul(&self, scalar: PrimeField<BASE>) -> Self {
         todo!()
     }
@@ -183,7 +143,7 @@ mod tests {
             is_infinity: false,
         };
         let q = CurvePoint::<PrimeField<N>>::from(q_point);
-        let r: Affine<PrimeField<N>> = p.add(q).into();
+        let r: Affine<PrimeField<N>> = (p + q).into();
         // println!("p: {:#?}", p);
         // println!("q: {:#?}", q);
         println!("r: {:#?}", r);
