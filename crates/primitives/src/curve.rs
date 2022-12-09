@@ -73,8 +73,44 @@ impl<const BASE: u32> Curve<PrimeField<BASE>> for CurvePoint<PrimeField<BASE>> {
 
 impl<const BASE: u32> Add<CurvePoint<PrimeField<BASE>>> for CurvePoint<PrimeField<BASE>> {
     type Output = CurvePoint<PrimeField<BASE>>;
-    fn add(self, _other: CurvePoint<PrimeField<BASE>>) -> Self::Output {
-        todo!()
+    fn add(self, to_add: Self) -> Self::Output {
+        let infinity = Projective {
+            x: PrimeField::from(0),
+            y: PrimeField::from(1),
+            z: PrimeField::from(0),
+        };
+        if self.point == infinity {
+            to_add
+        } else if to_add.point == infinity {
+            self
+        } else {
+            let (x_1, y_1, z_1) = (&self.point.x, &self.point.y, &self.point.z);
+            let (x_2, y_2, z_2) = (&to_add.point.x, &to_add.point.y, &to_add.point.z);
+            let (u_1, u_2) = (y_2 * z_1, y_1 * z_2);
+            let (v_1, v_2) = (x_2 * z_1, x_1 * z_2);
+            if v_1 == v_2 {
+                if u_1 != u_2 {
+                    Self { point: infinity }
+                } else {
+                    if y_1.is_null() {
+                        Self { point: infinity }
+                    } else {
+                        unimplemented!()
+                    }
+                }
+            } else {
+                let u = u_1 - u_2;
+                let v = v_1 - v_2;
+                let w = z_1 * z_2;
+                let a = u.pow(2) * w - v.pow(3) - PrimeField::from(2) * v.pow(2) * v_2;
+                let x = v * a;
+                let y = u * (v.pow(2) * v_2 - a) - v.pow(3) * u_2;
+                let z = v.pow(3) * w;
+                Self {
+                    point: Projective { x, y, z },
+                }
+            }
+        }
     }
 }
 
