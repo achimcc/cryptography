@@ -33,31 +33,23 @@ impl<const BASE: u32> Curve<PrimeField<BASE>> for CurvePoint<PrimeField<BASE>> {
         };
         if self.point == infinity {
             to_add
-        }
-        else if to_add.point == infinity {
+        } else if to_add.point == infinity {
             self
-        }
-        else {
+        } else {
             let (x_1, y_1, z_1) = (&self.point.x, &self.point.y, &self.point.z);
             let (x_2, y_2, z_2) = (&to_add.point.x, &to_add.point.y, &to_add.point.z);
             let (u_1, u_2) = (y_2 * z_1, y_1 * z_2);
             let (v_1, v_2) = (x_2 * z_1, x_1 * z_2);
             if v_1 == v_2 {
                 if u_1 != u_2 {
-                    Self {
-                        point: infinity,
-                    }
-                }
-                else {
+                    Self { point: infinity }
+                } else {
                     if y_1.is_null() {
-                        Self {
-                            point: infinity,
-                        }  
-                    }
-                    else {
+                        Self { point: infinity }
+                    } else {
                         unimplemented!()
                     }
-                }  
+                }
             } else {
                 let u = u_1 - u_2;
                 let v = v_1 - v_2;
