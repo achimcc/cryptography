@@ -1,3 +1,4 @@
+use crate::extended_euclidean::extended_euclidean;
 use std::ops::{Add, DivAssign, Mul, Rem, Sub};
 
 pub trait Field: Add + Sub + Mul + Sized {
@@ -30,12 +31,14 @@ impl<const BASE: u32> Field for PrimeField<BASE> {
         if self.is_null() {
             return None;
         }
-        for x in 1..BASE {
-            if (x * self.value) % BASE == 1 {
-                return Some(x.into());
-            }
+        let gcd = extended_euclidean(self.value as i32, BASE as i32);
+        let res: u32;
+        if gcd.y < 0 {
+            res = (gcd.y + BASE as i32).try_into().unwrap();
+        } else {
+            res = gcd.y.try_into().unwrap();
         }
-        None
+        return Some(res.into());
     }
 
     fn div(&self, to_div: &Self) -> Option<Self>
@@ -192,6 +195,14 @@ mod tests {
         const P: u32 = 7;
         let [a, b] = [3, 6].map(PrimeField::<P>::from);
         assert_eq!(a.mul(b), PrimeField::<P>::from(4));
+    }
+
+    #[test]
+    fn inversion_works() {
+        const P: u32 = 131;
+        let res = PrimeField::<P>::from(7).inv().unwrap();
+        println!("{:?}", res);
+        assert_eq!(PrimeField::<P>::from(7) * res, PrimeField::<P>::one());
     }
 
     #[test]
