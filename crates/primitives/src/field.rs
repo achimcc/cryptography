@@ -161,6 +161,14 @@ impl<const BASE: u32> From<PrimeField<BASE>> for Binary {
     }
 }
 
+impl IntoIterator for Binary {
+    type Item = bool;
+    type IntoIter = std::vec::IntoIter<bool>;
+    fn into_iter(self) -> Self::IntoIter {
+        self.0.into_iter()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
